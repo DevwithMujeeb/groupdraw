@@ -1,0 +1,66 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signed() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email.matches('.*@stu[.]ui[.]edu[.]ng');
+    }
+    function admin() { return signed() && request.auth.token.email == 'authman243984@stu.ui.edu.ng'; }
+    function draw() { return get(/databases/$(database)/documents/state/draw).data; }
+    function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+
+    match /config/site { allow read: if true; allow write: if admin(); }
+    match /config/links { allow read: if signed(); allow write: if admin(); }
+
+    match /state/draw {
+      allow read: if signed();
+      allow create, update, delete: if admin();
+      // A student may only move the counter forward by one, in the same transaction as their own claim.
+      allow update: if signed() && resource.data.open == true
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['next'])
+        && request.resource.data.next == resource.data.next + 1
+        && getAfter(/databases/$(database)/documents/claims/$(request.auth.uid)).data.idx == resource.data.next;
+    }
+
+    match /matrics/{m} {
+      allow create: if signed() && m.matches('[A-Z0-9]{5,12}')
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    match /users/{uid} {
+      allow read: if (signed() && request.auth.uid == uid) || admin();
+      allow create: if signed() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['name','email','matric'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.matric.matches('[A-Z0-9]{5,12}')
+        && getAfter(/databases/$(database)/documents/matrics/$(request.resource.data.matric)).data.uid == uid;
+      allow delete: if admin();
+    }
+
+    // Students never choose a slot: the claim must take exactly the next counter value.
+    match /claims/{uid} {
+      allow read: if (signed() && request.auth.uid == uid) || admin() || (signed() && draw().closed == true);
+      allow create: if signed() && request.auth.uid == uid
+        && draw().open == true
+        && request.resource.data.keys().hasOnly(['uid','idx','name','email','matric','t'])
+        && request.resource.data.uid == uid
+        && request.resource.data.idx == draw().next
+        && request.resource.data.idx < draw().total
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.name == me().name
+        && request.resource.data.matric == me().matric
+        && getAfter(/databases/$(database)/documents/state/draw).data.next == request.resource.data.idx + 1;
+      allow delete: if admin();
+    }
+
+    // Slot list stays hidden: a student can read only the slot their own claim points to, until results are published.
+    match /slots/{i} {
+      allow read: if admin()
+        || (signed() && exists(/databases/$(database)/documents/claims/$(request.auth.uid))
+            && get(/databases/$(database)/documents/claims/$(request.auth.uid)).data.idx == int(i))
+        || (signed() && draw().closed == true);
+      allow write: if admin();
+    }
+  }
+}

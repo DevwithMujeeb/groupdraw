@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GroupDraw</title>
+<style>
+:root{--bg:#eef2fa;--fg:#111a33;--mu:#4b5878;--card:rgba(255,255,255,.72);--ln:rgba(60,70,160,.2);--ac:#3a5bff;--ac2:#9a45ff;--ac3:#0aa7d6;--ok:#12a36b;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#050816;--fg:#eef2ff;--mu:#a3b2dc;--card:rgba(12,18,44,.6);--ln:rgba(150,170,255,.22);--ac:#6c8cff;--ac2:#c06bff;--ac3:#22e0ff}}
+:root[data-theme="dark"]{--bg:#050816;--fg:#eef2ff;--mu:#a3b2dc;--card:rgba(12,18,44,.6);--ln:rgba(150,170,255,.22);--ac:#6c8cff;--ac2:#c06bff;--ac3:#22e0ff}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:radial-gradient(900px 600px at 88% 8%,rgba(108,140,255,.3),transparent 62%),radial-gradient(800px 640px at 4% 92%,rgba(192,107,255,.24),transparent 62%),radial-gradient(600px 500px at 50% 50%,rgba(34,224,255,.07),transparent 70%),var(--bg);background-attachment:fixed;color:var(--fg);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+canvas#bg{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+.top,main,footer{position:relative;z-index:1}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 20px;position:sticky;top:0;background:var(--card);backdrop-filter:blur(10px);border-bottom:1px solid var(--ln);z-index:5}
+.logo{font-weight:800;letter-spacing:.3px}
+.logo span{background:linear-gradient(90deg,var(--ac3),var(--ac2));-webkit-background-clip:text;background-clip:text;color:transparent}
+nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+nav a,nav button{color:var(--fg);text-decoration:none;font-size:13px;padding:7px 11px;border-radius:9px;border:1px solid transparent;background:none;cursor:pointer;font-family:inherit}
+nav a:hover,nav button:hover{border-color:var(--ln)}
+.wrap{max-width:980px;margin:0 auto;padding:0 20px}
+.hero{padding:13vh 0 7vh}
+.hero h1{font-size:clamp(40px,8.5vw,84px);line-height:1;font-weight:800;letter-spacing:-1.5px;margin:0 0 16px;max-width:640px}
+.hero h1 em{font-style:normal;background:linear-gradient(90deg,var(--ac3),var(--ac),var(--ac2));-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{max-width:480px;color:var(--mu);font-size:17px;line-height:1.55;margin:0 0 24px}
+.btn{background:linear-gradient(135deg,var(--ac),var(--ac2));color:#fff;border:0;border-radius:12px;padding:13px 22px;font-size:15px;font-weight:650;cursor:pointer;font-family:inherit;text-decoration:none;display:inline-block;box-shadow:0 8px 28px rgba(120,100,255,.4);transition:transform .2s,box-shadow .2s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 14px 36px rgba(160,110,255,.55)}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
+.stats span{padding:8px 15px;border-radius:99px;border:1px solid var(--ln);background:var(--card);font-size:13px;backdrop-filter:blur(8px)}
+@keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+@keyframes pop{0%{transform:scale(.55);opacity:0}60%{transform:scale(1.1)}100%{transform:scale(1);opacity:1}}
+.btn.ghost{background:none;color:var(--fg);border:1px solid var(--ln);box-shadow:none}
+.btn.sm{padding:7px 12px;font-size:13px}
+.btn:disabled{opacity:.5}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:26px;padding:28px;backdrop-filter:blur(18px) saturate(150%);box-shadow:0 24px 70px rgba(70,80,220,.28),inset 0 1px 0 rgba(255,255,255,.12);animation:rise .9s ease both}
+#draw{padding:6vh 0}
+#card{max-width:460px;margin:0 auto;text-align:center}
+#card h2{margin:0 0 6px;font-size:22px}
+#card p,.note{color:var(--mu);font-size:14px;line-height:1.5}
+input[type=text],input[type=email],input.qin,input.lk{width:100%;padding:11px 13px;margin:6px 0;border-radius:10px;border:1px solid var(--ln);background:transparent;color:var(--fg);font-size:15px;font-family:inherit}
+.err{color:#e5484d;font-size:13px;min-height:18px}
+.big{font-size:clamp(100px,28vw,170px);font-weight:800;line-height:1;margin:6px 0;background:linear-gradient(135deg,var(--ac3),var(--ac),var(--ac2));-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 26px rgba(120,130,255,.55));animation:pop .7s cubic-bezier(.2,1.2,.3,1) both}
+.chip{display:inline-block;padding:6px 14px;border-radius:99px;border:1px solid var(--ln);font-weight:650;font-size:14px;margin-bottom:8px}
+.chip.lead{background:linear-gradient(135deg,#ffd45e,#ff9d2e);color:#2a1a00;border-color:#ffb02e;box-shadow:0 0 24px rgba(255,176,46,.55)}
+.eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--mu)}
+#admin{padding:6vh 0}
+#admin h3{margin:22px 0 8px;font-size:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.gchip{font-size:12px;padding:5px 9px;border-radius:8px;border:1px solid var(--ln)}
+.gchip.full{border-color:var(--ok);color:var(--ok)}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{text-align:left;padding:8px;border-bottom:1px solid var(--ln);white-space:nowrap}
+.qrow{display:flex;gap:6px;align-items:center}
+footer{margin-top:6vh;background:var(--card);backdrop-filter:blur(10px);border-top:1px solid var(--ln);padding:34px 0 24px}
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:24px}
+footer h4{margin:0 0 8px;font-size:14px}
+footer p,footer a{font-size:13px;line-height:1.6;color:var(--mu)}
+footer a{color:var(--ac)}
+.copy{margin-top:22px;font-size:12px;color:var(--mu)}
+[hidden]{display:none!important}
+#results{padding:6vh 0}.rg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-top:12px}.gbox{border:1px solid var(--ln);border-radius:14px;padding:12px;font-size:13px;line-height:1.7;text-align:left}
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<header class="top">
+  <div class="logo">Group<span>Draw</span></div>
+  <nav>
+    <a href="#home">Home</a><a href="#draw">Get my group</a><a href="#admin" id="navAdmin" hidden>Admin</a>
+    <button id="qual" title="Switch 3D quality">HD</button>
+  </nav>
+</header>
+<main>
+  <section id="home" class="hero"><div class="wrap">
+    <div class="eyebrow" style="margin-bottom:14px">EEE class group draw</div><h1>Find your <em>group</em> in 3D</h1>
+    <p>Sign in with your school email, enter your matric number, and press one button. Your group and role are picked fairly at random.</p>
+    <a class="btn" href="#draw">Get my group</a><div class="stats"><span>52 students</span><span>10 groups</span><span>1 leader per group</span></div>
+  </div></section>
+  <section id="draw"><div class="wrap"><div class="card" id="card"></div></div></section>
+  <section id="admin" hidden><div class="wrap"><div class="card" id="adminBox"></div></div></section>
+<section id="results" hidden><div class="wrap"><div class="card" id="resBox" style="max-width:none"></div></div></section>
+</main>
+<footer><div class="wrap">
+  <div class="fg">
+    <div><h4>Meet the developer</h4><p>Uthman Abdulmujeeb Kolawole (Mujeeb), a 300 level Electrical and Electronic Engineering student at the University of Ibadan. The 3D scene runs on three.js, and sign in and storage are handled by Firebase.</p></div>
+    <div><h4>Source code</h4><p>GroupDraw is open source. Read the code, report issues, or reuse it for your own class.</p><p><a href="https://github.com/DevwithMujeeb" target="_blank" rel="noopener">github.com/DevwithMujeeb</a></p></div>
+    <div><h4>How it stays fair</h4><p>Group and leader slots are shuffled before anyone presses the button. Each student receives one slot, and nobody can choose or redo it.</p></div>
+  </div>
+  <div class="copy">GroupDraw is free and open source. Your details are used only to run this class draw.</div>
+</div></footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getFirestore,doc,getDoc,getDocs,setDoc,updateDoc,onSnapshot,collection,runTransaction,writeBatch} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {firebaseConfig,ADMIN_EMAIL,DOMAIN} from "./firebase-config.js";
+(function(){
+var $=function(s){return document.querySelector(s)};
+var ADMIN=ADMIN_EMAIL.toLowerCase(),DOM=DOMAIN;
+var app=initializeApp(firebaseConfig),auth=getAuth(app),db=getFirestore(app);
+var DQ=[
+{t:"The present is theirs; the future, for which I really worked, is mine.",a:"Nikola Tesla"},
+{t:"Nothing is too wonderful to be true, if it be consistent with the laws of nature.",a:"Michael Faraday"},
+{t:"Where there is current, there is a way.",a:""},
+{t:"Stay positive and stay grounded.",a:""},
+{t:"Resist the noise and amplify the signal.",a:""},
+{t:"Every great circuit starts with a closed loop.",a:""},
+{t:"Voltage pushes, resistance tests, current delivers.",a:""},
+{t:"Measure twice, simulate once.",a:""}
+];
+var S={user:null,prof:null,claim:null,st:null,quotes:DQ.slice(),links:{},cl:null,sl:null};
+var msg="",busy=false,confirmReset=false,boost=0,unsub=[],unsubAll=[];
+function rnd(n){var a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=rnd(i+1),t=a[i];a[i]=a[j];a[j]=t}return a}
+function sizesFor(n){var b=Math.floor(n/10),r=n%10,o=[0,9,1,8,2,7,3,6,4,5],s=[];for(var i=0;i<10;i++)s[i]=b+(o.indexOf(i)<r?1:0);return s}
+function makeSlots(sz){var a=[];sz.forEach(function(s,i){var L=rnd(s);for(var k=0;k<s;k++)a.push({g:i+1,l:k===L})});return shuffle(a)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function pad(n){return n<10?"0"+n:""+n}
+function code(c){return"G"+pad(c.g)+(c.l?"L":"M")}
+function isAdm(){return !!S.user&&(S.user.email||"").toLowerCase()===ADMIN}
+function listen(ref,fn){return onSnapshot(ref,fn,function(e){console.warn(e.code)})}
+function stopAll(){unsubAll.forEach(function(f){f()});unsubAll=[];S.cl=S.sl=null}
+function syncAll(){
+  var want=S.user&&(isAdm()||(S.st&&S.st.closed));
+  if(want&&!unsubAll.length){
+    unsubAll.push(listen(collection(db,"claims"),function(q){S.cl=q.docs.map(function(d){return d.data()});render()}));
+    unsubAll.push(listen(collection(db,"slots"),function(q){S.sl={};q.docs.forEach(function(d){S.sl[d.id]=d.data()});render()}));
+  }else if(!want&&unsubAll.length)stopAll();
+}
+function rows(){
+  if(!S.cl||!S.sl)return[];
+  return S.cl.map(function(c){var s=S.sl[c.idx]||{};return{p:c,c:{g:s.g||0,l:!!s.l,t:c.t}}})
+   .sort(function(a,b){return a.c.g-b.c.g||(b.c.l-a.c.l)||a.p.idx-b.p.idx});
+}
+function render(){
+  var u=S.user,p=S.prof,c=S.claim,st=S.st,fn=u?esc((u.displayName||"").split(" ")[0]||"there"):"",h="",out=' <button class="btn ghost" data-act="out">Sign out</button>';
+  if(!busy){
+    if(!u)h='<h2>Sign in with your school email</h2><p>Only addresses ending in '+DOM+' can join.</p><div class="err">'+esc(msg)+'</div><button class="btn" data-act="signin">Continue with Google</button>';
+    else if(!p)h='<h2>Hi '+fn+'</h2><p>Enter your matric number. It goes into the class list.</p><input type="text" id="mt" placeholder="Matric number" autocomplete="off"><div class="err">'+esc(msg)+'</div><button class="btn" data-act="matric">Save and continue</button>'+out;
+    else if(!c){
+      if(!st||(!st.open&&!st.closed))h='<h2>You are registered, '+fn+'</h2><p>The draw has not opened yet. Check back soon.</p>'+out;
+      else if(st.closed)h='<h2>The draw is closed</h2><p>You did not draw a group. Please contact your class admin.</p>'+out;
+      else h='<h2>Ready, '+fn+'</h2><p>One press gives you your group and role. You cannot choose or redo it.</p><div class="err">'+esc(msg)+'</div><button class="btn" data-act="draw">Get my group</button>'+out;
+    }else if(c.g==null)h='<p>Loading your group...</p>';
+    else{
+      var lk=S.links[c.g],okl=lk&&/^https:\/\/(chat\.whatsapp\.com|wa\.me)\//.test(lk);
+      h='<div class="eyebrow">Your group</div><div class="big">'+c.g+'</div><div class="chip'+(c.l?" lead":"")+'">'+(c.l?"👑 Group Leader":"Group Member")+'</div>'+
+      '<p>Your code is <b>'+code(c)+'</b>. '+(c.l?"You were randomly picked as the only leader of this group.":"Your group leader was picked randomly too.")+'</p>'+
+      (okl?'<p><a class="btn" href="'+esc(lk)+'" target="_blank" rel="noopener">Join the WhatsApp group</a></p>':"")+'<button class="btn ghost sm" data-act="out">Sign out</button>';
+    }
+    $("#card").innerHTML=h;
+  }
+  var adm=isAdm();$("#admin").hidden=!adm;$("#navAdmin").hidden=!adm;
+  if(adm)renderAdmin();
+  var res=!adm&&st&&st.closed&&S.cl&&S.sl;$("#results").hidden=!res;if(res)renderResults();
+}
+function renderResults(){
+  var by={};rows().forEach(function(r){(by[r.c.g]=by[r.c.g]||[]).push(r)});
+  var h='<h2 style="margin:0 0 4px">Class results</h2><p class="note">The draw is closed. Here is every group.</p><div class="rg">';
+  Object.keys(by).forEach(function(g){h+='<div class="gbox"><b>Group '+g+'</b>'+by[g].map(function(r){return"<div>"+(r.c.l?"👑 ":"")+esc(r.p.name)+"</div>"}).join("")+"</div>"});
+  $("#resBox").innerHTML=h+"</div>";
+}
+function renderAdmin(){
+  var st=S.st,R=rows(),h='<h2 style="margin:0 0 4px">Admin dashboard</h2>';
+  if(!st)h+='<p class="note">The draw has not been created yet. Set the class size, then open it. Groups 1 and 10 get the extra seats.</p><div class="row"><input type="text" id="cs" value="52" style="max-width:110px"><button class="btn sm" data-act="open">Open the draw</button></div>';
+  else{
+    var cnt={},ld={};R.forEach(function(r){cnt[r.c.g]=(cnt[r.c.g]||0)+1;if(r.c.l)ld[r.c.g]=1});
+    h+='<p class="note">'+st.next+' of '+st.total+' students have drawn. The draw is '+(st.closed?"closed and results are public":"open")+'.</p><div class="row">';
+    st.sizes.forEach(function(s,i){var n=cnt[i+1]||0;h+='<span class="gchip'+(n===s?" full":"")+'">G'+(i+1)+': '+n+'/'+s+(ld[i+1]?" 👑":"")+'</span>'});
+    h+='</div><div class="row" style="margin:12px 0"><button class="btn sm" data-act="csv">Download CSV</button>'+(st.closed?"":'<button class="btn ghost sm" data-act="close">Close and publish results</button>')+'<button class="btn ghost sm" data-act="reset">'+(confirmReset?"Click again to confirm":"Reset the draw")+'</button></div>';
+  }
+  h+='<h3>Class list</h3><div class="tw"><table><tr><th>Group</th><th>Role</th><th>Name</th><th>Email</th><th>Matric</th></tr>';
+  R.forEach(function(r){h+='<tr><td>'+r.c.g+'</td><td>'+(r.c.l?"👑 Leader":"Member")+'</td><td>'+esc(r.p.name)+'</td><td>'+esc(r.p.email)+'</td><td>'+esc(r.p.matric)+'</td></tr>'});
+  if(!R.length)h+='<tr><td colspan="5">No one has drawn yet.</td></tr>';
+  h+='</table></div><h3>Flying quotes</h3><p class="note">Edit any quote, or add your own. The 3D scene updates for everyone.</p>';
+  S.quotes.forEach(function(q,i){h+='<div class="qrow"><input class="qin" data-i="'+i+'" data-f="t" value="'+esc(q.t)+'"><input class="qin" style="max-width:140px" data-i="'+i+'" data-f="a" placeholder="Author" value="'+esc(q.a||"")+'"><button class="btn ghost sm" data-act="delq" data-i="'+i+'">X</button></div>'});
+  h+='<div class="qrow"><input class="qin" id="nq" placeholder="New quote"><input class="qin" style="max-width:140px" id="na" placeholder="Author"><button class="btn sm" data-act="addq">Add</button></div>';
+  h+='<h3>WhatsApp group links</h3><p class="note">Paste each group’s invite link. Students see only their own group’s link.</p>';
+  for(var g=1;g<=10;g++)h+='<input class="lk" data-g="'+g+'" placeholder="Group '+g+' link" value="'+esc(S.links[g]||"")+'">';
+  $("#adminBox").innerHTML=h;
+}
+function csv(){
+  var L=[["Name","Email","Matric","Group","Role","Code","Time"]];
+  rows().forEach(function(r){L.push([r.p.name,r.p.email,r.p.matric,r.c.g,r.c.l?"Leader":"Member",code(r.c),new Date(r.c.t).toISOString()])});
+  return L.map(function(l){return l.map(function(v){return'"'+String(v).replace(/"/g,'""')+'"'}).join(",")}).join("\n");
+}
+function download(){
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv()],{type:"text/csv"}));a.download="group_assignments.csv";document.body.appendChild(a);a.click();a.remove();
+}
+function saveQ(){return setDoc(doc(db,"config","site"),{quotes:S.quotes})}
+async function drawGroup(){
+  if(busy)return;busy=true;
+  $("#card").innerHTML='<div class="eyebrow">Shuffling</div><div class="big" id="spin">?</div><p>Picking your slot...</p>';
+  try{
+    await runTransaction(db,async function(tx){
+      var ref=doc(db,"state","draw"),d=(await tx.get(ref)).data();
+      if(!d||!d.open||d.next>=d.total)throw new Error("closed");
+      tx.set(doc(db,"claims",S.user.uid),{uid:S.user.uid,idx:d.next,name:S.prof.name,email:S.user.email,matric:S.prof.matric,t:Date.now()});
+      tx.update(ref,{next:d.next+1});
+    });
+  }catch(err){busy=false;throw err}
+  var t0=Date.now(),iv=setInterval(function(){
+    $("#spin").textContent=1+rnd(10);
+    if(Date.now()-t0>1700){clearInterval(iv);busy=false;boost=1;render()}
+  },70);
+}
+var ERR={signin:"Sign in was cancelled or blocked. Please try again.",matric:"That matric number is already registered, or it is not valid.",draw:"Could not get your slot. Make sure the draw is open and try again."};
+document.addEventListener("click",async function(e){
+  var b=e.target.closest("[data-act]");if(!b)return;
+  var act=b.getAttribute("data-act");msg="";
+  if(act!=="reset")confirmReset=false;
+  try{
+    if(act==="signin"){var pr=new GoogleAuthProvider();pr.setCustomParameters({hd:DOM.slice(1),prompt:"select_account"});await signInWithPopup(auth,pr)}
+    else if(act==="out")await signOut(auth);
+    else if(act==="matric"){
+      var m=$("#mt").value.trim().toUpperCase();
+      if(!/^[A-Z0-9]{5,12}$/.test(m)){msg="Enter a valid matric number.";render();return}
+      var bt=writeBatch(db);
+      bt.set(doc(db,"matrics",m),{uid:S.user.uid});
+      bt.set(doc(db,"users",S.user.uid),{name:S.user.displayName||"",email:S.user.email,matric:m});
+      await bt.commit();
+    }
+    else if(act==="draw")await drawGroup();
+    else if(act==="csv")download();
+    else if(act==="open"){
+      var n=Math.max(10,Math.min(200,parseInt($("#cs").value,10)||52)),sz=sizesFor(n),sl=makeSlots(sz),bo=writeBatch(db);
+      sl.forEach(function(s,i){bo.set(doc(db,"slots",String(i)),s)});
+      bo.set(doc(db,"state","draw"),{open:true,closed:false,next:0,total:n,sizes:sz});
+      await bo.commit();
+    }
+    else if(act==="close")await updateDoc(doc(db,"state","draw"),{open:false,closed:true});
+    else if(act==="reset"){
+      if(!confirmReset){confirmReset=true;renderAdmin();return}
+      confirmReset=false;var br=writeBatch(db);
+      (await getDocs(collection(db,"claims"))).forEach(function(d){br.delete(d.ref)});
+      (await getDocs(collection(db,"slots"))).forEach(function(d){br.delete(d.ref)});
+      br.delete(doc(db,"state","draw"));await br.commit();
+    }
+    else if(act==="delq"){S.quotes.splice(+b.getAttribute("data-i"),1);await saveQ()}
+    else if(act==="addq"){var t=$("#nq").value.trim();if(t){S.quotes.push({t:t,a:$("#na").value.trim()});await saveQ()}}
+  }catch(err){console.warn(err);msg=ERR[act]||"Something went wrong. Please try again.";render()}
+});
+document.addEventListener("change",function(e){
+  var t=e.target;
+  if(t.classList.contains("qin")&&t.hasAttribute("data-i")){S.quotes[+t.getAttribute("data-i")][t.getAttribute("data-f")]=t.value.trim();saveQ()}
+  else if(t.classList.contains("lk")){S.links[t.getAttribute("data-g")]=t.value.trim();setDoc(doc(db,"config","links"),S.links)}
+});
+listen(doc(db,"config","site"),function(s){var d=s.data();if(d&&d.quotes&&d.quotes.length)S.quotes=d.quotes;buildQuotes();render()});
+onAuthStateChanged(auth,async function(u){
+  unsub.forEach(function(f){f()});unsub=[];stopAll();
+  S.prof=S.claim=S.st=null;S.links={};
+  if(u&&!(u.email||"").toLowerCase().endsWith(DOM)){msg="Use your school email ending in "+DOM;await signOut(auth);return}
+  S.user=u;
+  if(u){
+    unsub.push(listen(doc(db,"users",u.uid),function(s){S.prof=s.exists()?s.data():null;render()}));
+    unsub.push(listen(doc(db,"state","draw"),function(s){S.st=s.exists()?s.data():null;syncAll();render()}));
+    unsub.push(listen(doc(db,"config","links"),function(s){S.links=s.exists()?s.data():{};render()}));
+    unsub.push(listen(doc(db,"claims",u.uid),async function(s){
+      if(!s.exists()){S.claim=null;render();return}
+      var c=s.data();S.claim=c;render();
+      try{var sl=await getDoc(doc(db,"slots",String(c.idx)));if(sl.exists()){c.g=sl.data().g;c.l=sl.data().l}}catch(e){}
+      render();
+    }));
+  }
+  render();
+});
+/* ---------- 3D scene ---------- */
+var renderer=new THREE.WebGLRenderer({canvas:$("#bg"),antialias:true,alpha:true});
+var scene=new THREE.Scene(),camera=new THREE.PerspectiveCamera(60,1,.1,120);camera.position.set(0,0,12);
+scene.add(new THREE.AmbientLight(0xffffff,.65));
+var l1=new THREE.PointLight(0x5b8dff,1.6,60);l1.position.set(8,6,4);scene.add(l1);
+var l2=new THREE.PointLight(0xc06bff,1.6,60);l2.position.set(-8,-5,4);scene.add(l2);var l3=new THREE.PointLight(0x22e0ff,1.4,50);l3.position.set(4,-6,-2);scene.add(l3);
+var knot=new THREE.Mesh(new THREE.TorusKnotGeometry(2.3,.6,300,40),new THREE.MeshPhysicalMaterial({color:0x6c7cff,metalness:.55,roughness:.2,clearcoat:1,clearcoatRoughness:.08,emissive:0x2a2fb8,emissiveIntensity:.55}));
+knot.position.set(5,0,-7);scene.add(knot);
+var wire=new THREE.Mesh(new THREE.IcosahedronGeometry(4.3,1),new THREE.MeshBasicMaterial({color:0x5b8dff,wireframe:true,transparent:true,opacity:.18}));
+wire.position.copy(knot.position);scene.add(wire);
+var hub=new THREE.Group();hub.position.copy(knot.position);scene.add(hub);
+function glowTex(c){var cv=document.createElement("canvas");cv.width=cv.height=128;var x=cv.getContext("2d"),g=x.createRadialGradient(64,64,0,64,64,64);g.addColorStop(0,c);g.addColorStop(.35,c.replace(/[\d.]+\)$/,".25)"));g.addColorStop(1,"rgba(0,0,0,0)");x.fillStyle=g;x.fillRect(0,0,128,128);return new THREE.CanvasTexture(cv)}
+function glow(c,s,o){var m=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(c),transparent:true,blending:THREE.AdditiveBlending,depthWrite:false,opacity:o||1}));m.scale.set(s,s,1);return m}
+var halo=glow("rgba(110,140,255,1)",22,.5);halo.position.z=-3;hub.add(halo);
+var rings=[],RC=[0x22e0ff,0xc06bff,0xff6bb5],RG=["rgba(34,224,255,1)","rgba(192,107,255,1)","rgba(255,107,181,1)"],RR=[4.7,5.6,6.5];
+RC.forEach(function(c,i){var piv=new THREE.Group();piv.rotation.set(1.1+i*.55,i*.9,i*.4);
+ piv.add(new THREE.Mesh(new THREE.TorusGeometry(RR[i],.03,8,220),new THREE.MeshBasicMaterial({color:c,transparent:true,opacity:.6})));
+ var el=[];for(var k=0;k<2;k++){var e=new THREE.Mesh(new THREE.SphereGeometry(.11,12,12),new THREE.MeshBasicMaterial({color:0xffffff}));e.add(glow(RG[i],1.2,.9));piv.add(e);el.push({m:e,a:k*Math.PI+i})}
+ rings.push({p:piv,R:RR[i],el:el,s:.5+i*.18});hub.add(piv)});
+var shards=[],SC=[0x22e0ff,0xc06bff,0xff6bb5,0x6c8cff];
+for(var si=0;si<22;si++){var sc=SC[si%4],sh=new THREE.Mesh(si%2?new THREE.OctahedronGeometry(.2+Math.random()*.3):new THREE.IcosahedronGeometry(.2+Math.random()*.25),new THREE.MeshStandardMaterial({color:sc,emissive:sc,emissiveIntensity:.35,metalness:.4,roughness:.25,flatShading:true}));
+ sh.userData={th:Math.random()*6.28,r:7+Math.random()*7,y:(Math.random()-.5)*8,s:(.05+Math.random()*.12)*(si%3?1:-1)};shards.push(sh);hub.add(sh)}
+var hd=true,pts=null,sprites=[];
+var calm=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches?.3:1;
+function buildPoints(){
+  if(pts){scene.remove(pts);pts.geometry.dispose()}
+  var n=hd?1800:350,a=new Float32Array(n*3),cl=new Float32Array(n*3),pal=[[.13,.88,1],[.75,.42,1],[1,.42,.71],[.42,.55,1]];
+  for(var i=0;i<n;i++){a[i*3]=(Math.random()-.5)*70;a[i*3+1]=(Math.random()-.5)*44;a[i*3+2]=-25+Math.random()*34;var cc=pal[i%4];cl[i*3]=cc[0];cl[i*3+1]=cc[1];cl[i*3+2]=cc[2]}
+  var g=new THREE.BufferGeometry();g.setAttribute("position",new THREE.BufferAttribute(a,3));g.setAttribute("color",new THREE.BufferAttribute(cl,3));
+  pts=new THREE.Points(g,new THREE.PointsMaterial({vertexColors:true,size:hd?.1:.13,transparent:true,opacity:.9}));scene.add(pts);
+}
+function qSprite(q){
+  var W=720,cv=document.createElement("canvas"),x=cv.getContext("2d");
+  x.font="500 34px Georgia,serif";
+  var words=("“"+q.t+"”").split(" "),lines=[],ln="";
+  words.forEach(function(w){var t=ln?ln+" "+w:w;if(x.measureText(t).width>W-90&&ln){lines.push(ln);ln=w}else ln=t});
+  lines.push(ln);
+  var H=lines.length*46+(q.a?62:34)+34;cv.width=W*2;cv.height=H*2;x=cv.getContext("2d");x.scale(2,2);
+  x.fillStyle="rgba(8,12,34,.8)";var gr=x.createLinearGradient(0,0,W,H);gr.addColorStop(0,"#22e0ff");gr.addColorStop(1,"#c06bff");x.strokeStyle=gr;x.lineWidth=3;
+  x.beginPath();x.moveTo(40,3);x.arcTo(W-3,3,W-3,H-3,36);x.arcTo(W-3,H-3,3,H-3,36);x.arcTo(3,H-3,3,3,36);x.arcTo(3,3,W-3,3,36);x.closePath();x.fill();x.stroke();
+  x.fillStyle="#fff";x.font="500 34px Georgia,serif";x.textBaseline="middle";
+  lines.forEach(function(l,i){x.fillText(l,44,50+i*46)});
+  if(q.a){x.fillStyle="#22e0ff";x.font="600 24px system-ui,sans-serif";x.fillText(q.a.toUpperCase(),44,H-38)}
+  var sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,opacity:.95}));
+  var sw=6+Math.random()*1.5;sp.scale.set(sw,sw*H/W,1);return sp;
+}
+function buildQuotes(){
+  sprites.forEach(function(s){scene.remove(s);s.material.map.dispose();s.material.dispose()});sprites=[];
+  var list=S.quotes.filter(function(q){return q.t}).slice(0,hd?9:5);
+  list.forEach(function(q,i){
+    var s=qSprite(q);
+    s.position.set(-22+Math.random()*44,-5.5+(i/Math.max(list.length-1,1))*11,-10+Math.random()*9);
+    s.userData={v:.35+Math.random()*.5,ph:Math.random()*6};sprites.push(s);scene.add(s);
+  });
+}
+function size(){
+  var w=innerWidth,h=innerHeight;renderer.setPixelRatio(hd?Math.min(devicePixelRatio||1,2):1);
+  renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+  knot.position.x=w<700?0:5;wire.position.copy(knot.position);hub.position.copy(knot.position);
+}
+addEventListener("resize",size);
+var mx=0,my=0;addEventListener("pointermove",function(e){mx=e.clientX/innerWidth*2-1;my=e.clientY/innerHeight*2-1});
+$("#qual").addEventListener("click",function(){hd=!hd;this.textContent=hd?"HD":"Lite";size();buildPoints();buildQuotes()});
+var clk=new THREE.Clock();
+function tick(){
+  var dt=Math.min(clk.getDelta(),.05)*calm,t=clk.elapsedTime;
+  boost=Math.max(0,boost-dt*.8);var k=1+boost*5;
+  knot.rotation.x+=dt*.18*k;knot.rotation.y+=dt*.26*k;knot.scale.setScalar(1+boost*.35);
+  wire.rotation.y-=dt*.1*k;wire.rotation.x+=dt*.07*k;
+  rings.forEach(function(r,i){r.p.rotation.y+=dt*.1*(i+1)*k;r.el.forEach(function(e){e.a+=dt*r.s*k*1.6;e.m.position.set(Math.cos(e.a)*r.R,Math.sin(e.a)*r.R,0)})});
+  shards.forEach(function(s,i){var d=s.userData;d.th+=dt*d.s*k;s.position.set(Math.cos(d.th)*d.r,d.y+Math.sin(t+i)*.35,Math.sin(d.th)*d.r*.55);s.rotation.x+=dt*.6;s.rotation.y+=dt*.8});
+  halo.material.opacity=.45+Math.sin(t*1.3)*.12+boost*.4;
+  knot.position.y=-(scrollY/Math.max(innerHeight,1))*1.2;wire.position.y=hub.position.y=knot.position.y;
+  pts.rotation.y+=dt*.02*k;
+  sprites.forEach(function(s){
+    s.position.x-=s.userData.v*dt;s.position.y+=Math.sin(t*.8+s.userData.ph)*dt*.25;
+    if(s.position.x<-24)s.position.x=24;s.material.rotation=Math.sin(t*.5+s.userData.ph)*.05;
+  });
+  camera.position.x+=(mx*1.4-camera.position.x)*.04;camera.position.y+=(-my*.9-camera.position.y)*.04;camera.lookAt(0,0,-4);
+  renderer.render(scene,camera);requestAnimationFrame(tick);
+}
+size();buildPoints();buildQuotes();render();tick();
+})();
+</script>
+</body>
+</html>
