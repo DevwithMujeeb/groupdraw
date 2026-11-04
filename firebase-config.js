@@ -9,3 +9,8 @@ export const firebaseConfig = {
 };
 export const ADMIN_EMAIL = "authman243984@stu.ui.edu.ng";
 export const DOMAIN = "@stu.ui.edu.ng";
+
+// Optional links. Leave a value empty to hide that feature.
+export const PORTFOLIO_URL = "";   // your website, for example https://yoursite.com
+export const COFFEE_URL = "";      // a payment or Buy Me a Coffee link
+export const COFFEE_NOTE = "";     // optional text shown in the coffee popup, such as bank details
